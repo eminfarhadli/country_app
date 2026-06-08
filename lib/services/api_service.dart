@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import '../models/country_model.dart';
 
@@ -7,7 +8,12 @@ class ApiService {
       baseUrl: 'https://restcountries.com/v3.1',
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
-      // Serverdən gələn bəzi xətaları birbaşa crash etməməsi üçün
+      // Set common headers here to avoid repeating them in get calls
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Flutter_Country_App',
+      },
+      // Keep statuses < 500 from crashing automatically
       validateStatus: (status) {
         return status != null && status < 500;
       },
@@ -16,32 +22,20 @@ class ApiService {
 
   Future<List<CountryModel>> getAllCountries() async {
     try {
-      // REST Countries API-də 10-dan çox sahə (field) tələb etdikdə 400 xətası verir.
-      // Bu problemi həll etmək üçün sorğuları iki hissəyə bölürük və paralel olaraq icra edirik:
+      // REST Countries API returns 400 if too many fields are requested.
+      // We divide the query into two requests and run them concurrently.
       final responses = await Future.wait([
         _dio.get(
           '/all',
           queryParameters: {
             'fields': 'name,cca3,capital,flags,population,region,subregion,area,borders,timezones'
           },
-          options: Options(
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'Flutter_Country_App',
-            },
-          ),
         ),
         _dio.get(
           '/all',
           queryParameters: {
             'fields': 'cca3,languages,currencies,latlng'
           },
-          options: Options(
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'Flutter_Country_App',
-            },
-          ),
         ),
       ]);
 
@@ -52,7 +46,7 @@ class ApiService {
         final List<dynamic> data1 = response1.data;
         final List<dynamic> data2 = response2.data;
 
-        // İkinci sorğunun datalarını cca3-ə görə qruplaşdırırıq (sürətli axtarış üçün)
+        // Index the second request's data by cca3 for fast lookups
         final Map<String, dynamic> additionalData = {};
         for (var item in data2) {
           if (item is Map<String, dynamic>) {
@@ -63,7 +57,7 @@ class ApiService {
           }
         }
 
-        // Dataları birləşdiririk
+        // Combine the datasets
         final List<Map<String, dynamic>> combinedList = [];
         for (var item in data1) {
           if (item is Map<String, dynamic>) {
@@ -81,10 +75,25 @@ class ApiService {
 
         return combinedList.map((json) => CountryModel.fromJson(json)).toList();
       } else {
-        throw Exception('Server error: ${response1.statusCode} / ${response2.statusCode}');
+        throw DioException(
+          requestOptions: response1.requestOptions,
+          response: response1,
+          type: DioExceptionType.badResponse,
+        );
       }
-    } catch (e) {
-      throw Exception('Error fetching countries: $e');
+    } on DioException catch (e, stackTrace) {
+      String errorMessage = 'error_unexpected';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.error is SocketException) {
+        errorMessage = 'error_network';
+      } else if (e.response != null) {
+        errorMessage = 'error_server';
+      }
+      Error.throwWithStackTrace(Exception(errorMessage), stackTrace);
+    } catch (e, stackTrace) {
+      Error.throwWithStackTrace(Exception('error_unexpected'), stackTrace);
     }
   }
 }

@@ -3,15 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/country_cubit.dart';
 import '../cubit/country_state.dart';
 import '../widgets/country_card.dart';
+import '../l10n/app_localizations.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favorites'),
+        title: Text(l10n.favorites),
       ),
       body: BlocBuilder<CountryCubit, CountryState>(
         builder: (context, state) {
@@ -21,7 +24,7 @@ class FavoritesScreen extends StatelessWidget {
                 .toList();
 
             if (favorites.isEmpty) {
-              return const Center(child: Text('No favorites yet.'));
+              return Center(child: Text(l10n.noFavorites));
             }
 
             return ListView.builder(

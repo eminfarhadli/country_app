@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get_storage/get_storage.dart';
 import 'cubit/country_cubit.dart';
+import 'cubit/language_cubit.dart'; 
 import 'services/api_service.dart';
 import 'services/storage_service.dart';
 import 'screens/home_screen.dart';
+import 'theme/app_theme.dart';
+import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,25 +29,32 @@ class CountryExplorerApp extends StatelessWidget {
             storageService: StorageService(),
           )..fetchCountries(),
         ),
-      ],
-      child: MaterialApp(
-        title: 'Country Explorer',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.indigo,
-          scaffoldBackgroundColor: Colors.grey[100],
-          appBarTheme: const AppBarTheme(
-            elevation: 0,
-            centerTitle: true,
-            backgroundColor: Colors.indigo,
-            foregroundColor: Colors.white,
-          ),
-          cardTheme: CardThemeData(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+        BlocProvider<LanguageCubit>(
+          create: (context) => LanguageCubit(),
         ),
-        home: const HomeScreen(),
+      ],
+      child: BlocBuilder<LanguageCubit, Locale>(
+        builder: (context, currentLocale) {
+          return MaterialApp(
+            title: 'Country Explorer',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            
+            locale: currentLocale, 
+            
+            supportedLocales: const [
+              Locale('en'), 
+              Locale('az'),
+            ],
+            localizationsDelegates: const [
+              AppLocalizationsDelegate(),
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const HomeScreen(),
+          );
+        },
       ),
     );
   }

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/country_model.dart';
 import '../cubit/country_cubit.dart';
 import '../cubit/country_state.dart';
+import '../widgets/country_flag.dart';
+import '../utils/number_formatter.dart';
+import '../l10n/app_localizations.dart';
+import '../theme/app_theme.dart';
 
 class DetailScreen extends StatelessWidget {
   final CountryModel country;
@@ -14,6 +17,9 @@ class DetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(country.name),
@@ -41,31 +47,29 @@ class DetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            CachedNetworkImage(
+            CountryFlag(
               imageUrl: country.flagUrl,
               height: 200,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-              errorWidget: (context, url, error) => const Icon(Icons.error),
+              borderRadius: 0,
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoRow('Capital', country.capital),
-                  _buildInfoRow('Population', country.population.toString()),
-                  _buildInfoRow('Area', '${country.area} km²'),
-                  _buildInfoRow('Region', country.region),
-                  _buildInfoRow('Subregion', country.subregion),
-                  _buildInfoRow('Timezones', country.timezones.join(', ')),
-                  _buildInfoRow('Languages', country.languages.join(', ')),
-                  _buildInfoRow('Currencies', country.currencies.join(', ')),
+                  _buildInfoRow(l10n.capital, country.capital),
+                  _buildInfoRow(l10n.population, NumberFormatter.format(country.population)),
+                  _buildInfoRow(l10n.area, '${NumberFormatter.format(country.area)} km²'),
+                  _buildInfoRow(l10n.region, country.region),
+                  _buildInfoRow(l10n.subregion, country.subregion),
+                  _buildInfoRow(l10n.timezones, country.timezones.join(', ')),
+                  _buildInfoRow(l10n.languages, country.languages.join(', ')),
+                  _buildInfoRow(l10n.currencies, country.currencies.join(', ')),
                   const SizedBox(height: 16),
                   if (country.borders.isNotEmpty) ...[
-                    const Text(
-                      'Borders:',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    Text(
+                      '${l10n.borders}:',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -74,6 +78,7 @@ class DetailScreen extends StatelessWidget {
                       children: country.borders.map((borderCca3) {
                         return ActionChip(
                           label: Text(borderCca3),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           onPressed: () {
                             final borderCountry = context.read<CountryCubit>().getCountryByCca3(borderCca3);
                             if (borderCountry != null) {
@@ -85,7 +90,7 @@ class DetailScreen extends StatelessWidget {
                               );
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Country data not found')),
+                                SnackBar(content: Text(l10n.countryNotFound)),
                               );
                             }
                           },
@@ -95,15 +100,15 @@ class DetailScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                   ],
                   if (country.latlng.length == 2) ...[
-                    const Text(
-                      'Map:',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    Text(
+                      '${l10n.map}:',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
                       height: 250,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppTheme.borderRadius12,
                         child: FlutterMap(
                           options: MapOptions(
                             initialCenter: LatLng(country.latlng[0], country.latlng[1]),
@@ -120,9 +125,9 @@ class DetailScreen extends StatelessWidget {
                                   point: LatLng(country.latlng[0], country.latlng[1]),
                                   width: 80,
                                   height: 80,
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.location_on,
-                                    color: Colors.red,
+                                    color: theme.colorScheme.secondary,
                                     size: 40,
                                   ),
                                 ),

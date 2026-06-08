@@ -18,8 +18,4 @@ class StorageService {
     }
     await _box.write(_favoritesKey, currentFavs);
   }
-
-  bool isFavorite(String cca3) {
-    return getFavorites().contains(cca3);
-  }
 }

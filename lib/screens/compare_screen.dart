@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../models/country_model.dart';
 import '../cubit/country_cubit.dart';
 import '../cubit/country_state.dart';
+import '../widgets/country_flag.dart';
+import '../utils/number_formatter.dart';
+import '../l10n/app_localizations.dart';
+import '../theme/app_theme.dart';
 
 class CompareScreen extends StatefulWidget {
   const CompareScreen({super.key});
@@ -18,9 +21,11 @@ class _CompareScreenState extends State<CompareScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Compare Countries'),
+        title: Text(l10n.compareCountries),
       ),
       body: BlocBuilder<CountryCubit, CountryState>(
         builder: (context, state) {
@@ -39,10 +44,11 @@ class _CompareScreenState extends State<CompareScreen> {
                     Expanded(
                       child: DropdownButtonFormField<CountryModel>(
                         isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Country 1',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: l10n.country1Label,
+                          border: const OutlineInputBorder(),
                         ),
+                        // DƏYİŞİKLİK BURADA: value yerinə initialValue yazıldı
                         initialValue: country1,
                         items: allCountries.map((c) {
                           return DropdownMenuItem(
@@ -61,10 +67,11 @@ class _CompareScreenState extends State<CompareScreen> {
                     Expanded(
                       child: DropdownButtonFormField<CountryModel>(
                         isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Country 2',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: l10n.country2Label,
+                          border: const OutlineInputBorder(),
                         ),
+                        // DƏYİŞİKLİK BURADA: value yerinə initialValue yazıldı
                         initialValue: country2,
                         items: allCountries.map((c) {
                           return DropdownMenuItem(
@@ -83,7 +90,7 @@ class _CompareScreenState extends State<CompareScreen> {
                 ),
                 const SizedBox(height: 24),
                 if (country1 != null && country2 != null)
-                  _buildComparisonTable(country1!, country2!),
+                  _buildComparisonTable(country1!, country2!, l10n),
               ],
             ),
           );
@@ -92,10 +99,12 @@ class _CompareScreenState extends State<CompareScreen> {
     );
   }
 
-  Widget _buildComparisonTable(CountryModel c1, CountryModel c2) {
+  Widget _buildComparisonTable(CountryModel c1, CountryModel c2, AppLocalizations l10n) {
+    final theme = Theme.of(context);
+
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: AppTheme.borderRadius12),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -105,11 +114,10 @@ class _CompareScreenState extends State<CompareScreen> {
                 Expanded(
                   child: Column(
                     children: [
-                      CachedNetworkImage(
+                      CountryFlag(
                         imageUrl: c1.flagUrl,
                         height: 60,
-                        placeholder: (context, url) => const CircularProgressIndicator(),
-                        errorWidget: (context, url, error) => const Icon(Icons.error),
+                        borderRadius: 6,
                       ),
                       const SizedBox(height: 8),
                       Text(c1.name, style: const TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
@@ -117,16 +125,22 @@ class _CompareScreenState extends State<CompareScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Text('VS', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                Text(
+                  l10n.vs,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     children: [
-                      CachedNetworkImage(
+                      CountryFlag(
                         imageUrl: c2.flagUrl,
                         height: 60,
-                        placeholder: (context, url) => const CircularProgressIndicator(),
-                        errorWidget: (context, url, error) => const Icon(Icons.error),
+                        borderRadius: 6,
                       ),
                       const SizedBox(height: 8),
                       Text(c2.name, style: const TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
@@ -136,11 +150,11 @@ class _CompareScreenState extends State<CompareScreen> {
               ],
             ),
             const Divider(height: 32),
-            _buildStatRow('Capital', c1.capital, c2.capital),
-            _buildStatRow('Region', c1.region, c2.region),
-            _buildStatRow('Population', c1.population.toString(), c2.population.toString()),
-            _buildStatRow('Area (km²)', c1.area.toString(), c2.area.toString()),
-            _buildStatRow('Timezones', c1.timezones.join(', '), c2.timezones.join(', ')),
+            _buildStatRow(l10n.capital, c1.capital, c2.capital),
+            _buildStatRow(l10n.region, c1.region, c2.region),
+            _buildStatRow(l10n.population, NumberFormatter.format(c1.population), NumberFormatter.format(c2.population)),
+            _buildStatRow('${l10n.area} (km²)', NumberFormatter.format(c1.area), NumberFormatter.format(c2.area)),
+            _buildStatRow(l10n.timezones, c1.timezones.join(', '), c2.timezones.join(', ')),
           ],
         ),
       ),

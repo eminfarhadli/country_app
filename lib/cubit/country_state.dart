@@ -5,7 +5,7 @@ abstract class CountryState extends Equatable {
   const CountryState();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class CountryInitial extends CountryState {}
@@ -48,7 +48,7 @@ class CountryLoaded extends CountryState {
   }
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         allCountries,
         displayedCountries,
         favoriteCca3s,
@@ -63,5 +63,5 @@ class CountryError extends CountryState {
   const CountryError(this.message);
 
   @override
-  List<Object> get props => [message];
+  List<Object?> get props => [message];
 }

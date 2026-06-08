@@ -26,7 +26,8 @@ class CountryCubit extends Cubit<CountryState> {
         favoriteCca3s: favorites,
       ));
     } catch (e) {
-      emit(CountryError(e.toString()));
+      final errorStr = e.toString().replaceFirst('Exception: ', '');
+      emit(CountryError(errorStr));
     }
   }
 
